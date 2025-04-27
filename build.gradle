@@ -28,15 +28,18 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
-    implementation 'org.springframework.boot:spring-boot-starter-security' // ✅ Security (중복 제거)
+    implementation 'org.springframework.boot:spring-boot-starter-security' // ✅ Security
 
     // --- Lombok ---
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
     // --- Database Drivers ---
-    runtimeOnly 'com.mysql:mysql-connector-j' // MySQL
-    runtimeOnly 'com.h2database:h2'           // H2 (local 테스트용)
+    implementation 'mysql:mysql-connector-java:8.0.33' // ✅ 여기만 유지 (runtimeOnly 필요 없음)
+    runtimeOnly 'com.h2database:h2'                    // (optional) H2 로컬 테스트용
+
+    // --- Kafka ---
+    implementation 'org.springframework.kafka:spring-kafka'
 
     // --- JWT 관련 ---
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
@@ -46,9 +49,8 @@ dependencies {
     // --- 테스트 ---
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    implementation 'org.springframework.kafka:spring-kafka'
 }
+
 
 
 tasks.named('test') {
