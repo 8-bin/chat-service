@@ -44,7 +44,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
         // ✅ 첫 입장 시
         if (!sessionRoomMap.containsKey(session.getId())) {
-            chatConsumer.addSession(roomId, session);
+            // chatConsumer.addSession(roomId, session);
             sessionRoomMap.put(session.getId(), roomId);
 
             // 과거 채팅 불러오기
@@ -75,7 +75,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
         Long roomId = sessionRoomMap.remove(session.getId());
         if (roomId != null) {
-            chatConsumer.removeSession(roomId, session);
+            // chatConsumer.removeSession(roomId, session);
         }
     }
 
