@@ -6,6 +6,7 @@ import com.example.chatservice.repository.ChatMessageRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
@@ -19,14 +20,15 @@ public class ChatConsumer {
 
     private final ChatMessageRepository chatMessageRepository;
     private final SimpMessagingTemplate messagingTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper(); // ✅ 추가
+    private final ObjectMapper objectMapper = new ObjectMapper(); // ✅ JSON 파싱용
 
     @KafkaListener(topics = CHAT_TOPIC, groupId = "chat-group")
-    public void consume(String message) { // ✅ String으로 받는다
+    public void consume(ConsumerRecord<String, String> record) { // ✅ ConsumerRecord로 변경
         try {
-            ChatMessage chatMessage = objectMapper.readValue(message, ChatMessage.class); // ✅ 직접 파싱
+            String message = record.value(); // ✅ Kafka 메시지 value 꺼내기
+            ChatMessage chatMessage = objectMapper.readValue(message, ChatMessage.class); // ✅ JSON -> ChatMessage 변환
 
-            // DB 저장
+            // ✅ DB 저장
             chatMessageRepository.save(
                     ChatMessageEntity.builder()
                             .roomId(chatMessage.getRoomId())
@@ -39,7 +41,7 @@ public class ChatConsumer {
             log.info("✅ Kafka 수신 및 저장 완료 - roomId: {}, sender: {}, content: {}",
                     chatMessage.getRoomId(), chatMessage.getSender(), chatMessage.getContent());
 
-            // WebSocket 브로드캐스트
+            // ✅ WebSocket STOMP로 브로드캐스트
             messagingTemplate.convertAndSend(
                     "/topic/chat/room/" + chatMessage.getRoomId(),
                     chatMessage
@@ -52,4 +54,3 @@ public class ChatConsumer {
         }
     }
 }
-
