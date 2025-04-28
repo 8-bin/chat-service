@@ -66,7 +66,6 @@ public class ChatConsumer {
         }
     }
 
-
     // ✅ 세션 등록 (채팅방 입장할 때)
     public void addSession(Long roomId, WebSocketSession session) {
         roomSessions.computeIfAbsent(roomId, k -> ConcurrentHashMap.newKeySet()).add(session);
