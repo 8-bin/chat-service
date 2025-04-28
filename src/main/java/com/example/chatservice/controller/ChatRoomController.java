@@ -29,6 +29,11 @@ public class ChatRoomController {
         return ResponseEntity.ok(chatRoomService.getAllChatRooms());
     }
 
+    @GetMapping("/{id}")
+    public ChatRoomResponse getChatRoom(@PathVariable Long id) {
+        return chatRoomService.getChatRoom(id);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteChatRoom(@PathVariable Long id,
                                                Authentication authentication) {

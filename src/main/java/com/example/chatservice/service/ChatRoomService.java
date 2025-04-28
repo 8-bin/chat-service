@@ -41,6 +41,14 @@ public class ChatRoomService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public ChatRoomResponse getChatRoom(Long roomId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("채팅방을 찾을 수 없습니다."));
+
+        return new ChatRoomResponse(chatRoom.getId(), chatRoom.getName());
+    }
+
     // 채팅방 삭제 (✅ 본인 소유 채팅방만 삭제할 수 있도록)
     @Transactional
     public void deleteChatRoom(Long id, String userEmail) {
