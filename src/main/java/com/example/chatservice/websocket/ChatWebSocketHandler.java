@@ -22,8 +22,11 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final ChatProducer chatProducer;
     private final ChatConsumer chatConsumer;
-    private final ChatMessageService chatMessageService; // ✅ 추가
+    private final ChatMessageService chatMessageService;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    // 세션 ID -> roomId 매핑
     private final Map<String, Long> sessionRoomMap = new ConcurrentHashMap<>();
 
     @Override
@@ -36,39 +39,40 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         String payload = message.getPayload().toString();
         log.info("WebSocket 메시지 수신: {}", payload);
 
-        ChatMessage chatMessage = new ObjectMapper().readValue(payload, ChatMessage.class);
+        ChatMessage chatMessage = objectMapper.readValue(payload, ChatMessage.class);
+        Long roomId = chatMessage.getRoomId();
 
-        // ✅ 첫 입장 처리
+        // ✅ 첫 입장 시
         if (!sessionRoomMap.containsKey(session.getId())) {
-            Long roomId = chatMessage.getRoomId();
             chatConsumer.addSession(roomId, session);
             sessionRoomMap.put(session.getId(), roomId);
 
-            // ✅ 과거 메시지 조회 후 전송
+            // 과거 채팅 불러오기
             List<ChatMessageEntity> pastMessages = chatMessageService.getMessagesByRoomId(roomId);
-            for (ChatMessageEntity pastMessage : pastMessages) {
+            for (ChatMessageEntity past : pastMessages) {
                 ChatMessage oldMessage = new ChatMessage(
-                        pastMessage.getRoomId(),
-                        pastMessage.getSender(),
-                        pastMessage.getContent()
+                        past.getRoomId(),
+                        past.getSender(),
+                        past.getContent()
                 );
-                String json = new ObjectMapper().writeValueAsString(oldMessage);
-                session.sendMessage(new TextMessage(json));
+                String pastPayload = objectMapper.writeValueAsString(oldMessage);
+                session.sendMessage(new TextMessage(pastPayload));
             }
         }
 
-        // ✅ 이후에는 실시간 채팅 메시지 Kafka 발행
+        // ✅ 실시간 메시지 Kafka 발행
         chatProducer.sendMessage(chatMessage);
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) {
-        log.error("WebSocket 전송 에러: {}", exception.getMessage());
+        log.error("WebSocket 통신 에러: {}", exception.getMessage());
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         log.info("WebSocket 연결 종료: {}", session.getId());
+
         Long roomId = sessionRoomMap.remove(session.getId());
         if (roomId != null) {
             chatConsumer.removeSession(roomId, session);
